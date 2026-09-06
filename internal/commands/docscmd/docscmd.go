@@ -89,7 +89,7 @@ func Execute(app *appctx.Context, args []string) error {
 }
 
 func runDocsync(ctx context.Context, app *appctx.Context, check bool) error {
-	args := []string{}
+	args := []string{"--root", app.CWD}
 	if check {
 		args = append(args, "--check")
 	}
