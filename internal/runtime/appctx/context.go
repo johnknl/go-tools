@@ -34,6 +34,8 @@ import (
 	"github.com/johnknl/go-tools/internal/runtime/tooling"
 )
 
+const goWorkOff = "GOWORK=off"
+
 // Context stores process and runtime dependencies shared across commands.
 //
 //nolint:govet // keeping explicit runtime fields grouped for command wiring clarity.
@@ -77,7 +79,7 @@ func (c Context) RunTool(ctx context.Context, name string, args []string) error 
 		return fmt.Errorf("missing tools.mod after tool setup: %w", err)
 	}
 	runArgs := tooling.ToolInvocationArgs(modFile, name, args)
-	opts := execx.RunOptions{Dir: c.CWD, Stdout: c.Stdout, Stderr: c.Stderr, Stdin: c.Stdin}
+	opts := execx.RunOptions{Dir: c.CWD, Env: []string{goWorkOff}, Stdout: c.Stdout, Stderr: c.Stderr, Stdin: c.Stdin}
 	return c.Runner.Run(ctx, "go", runArgs, opts)
 }
 
@@ -92,6 +94,6 @@ func (c Context) RunToolOutput(ctx context.Context, name string, args []string) 
 		return "", fmt.Errorf("missing tools.mod after tool setup: %w", err)
 	}
 	runArgs := tooling.ToolInvocationArgs(modFile, name, args)
-	opts := execx.RunOptions{Dir: c.CWD, Stdout: c.Stdout, Stderr: c.Stderr, Stdin: c.Stdin}
+	opts := execx.RunOptions{Dir: c.CWD, Env: []string{goWorkOff}, Stdout: c.Stdout, Stderr: c.Stderr, Stdin: c.Stdin}
 	return c.Runner.Output(ctx, "go", runArgs, opts)
 }

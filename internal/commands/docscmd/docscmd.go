@@ -24,6 +24,11 @@ package docscmd
 
 import (
 	"context"
+	"errors"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/johnknl/go-tools/internal/runtime/appctx"
 	"github.com/johnknl/go-tools/internal/runtime/execx"
@@ -89,10 +94,92 @@ func Execute(app *appctx.Context, args []string) error {
 }
 
 func runDocsync(ctx context.Context, app *appctx.Context, check bool) error {
+	shouldRun, err := hasExampleMarkers(app.CWD)
+	if err != nil {
+		return err
+	}
+	if !shouldRun {
+		return nil
+	}
+
 	args := []string{"--root", app.CWD}
 	if check {
 		args = append(args, "--check")
 	}
 
 	return app.RunTool(ctx, "docsync", args)
+}
+
+func hasExampleMarkers(root string) (bool, error) {
+	readmePath := filepath.Join(root, "README.md")
+	readmeHasMarker, err := markdownFileHasExampleMarker(readmePath)
+	if err != nil {
+		return false, err
+	}
+	if readmeHasMarker {
+		return true, nil
+	}
+
+	docsDir := filepath.Join(root, "docs")
+	info, err := os.Stat(docsDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+	if !info.IsDir() {
+		return false, nil
+	}
+
+	walkErr := filepath.WalkDir(docsDir, func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if d.IsDir() {
+			return nil
+		}
+		if !strings.EqualFold(filepath.Ext(path), ".md") {
+			return nil
+		}
+
+		//nolint:gosec // path comes from WalkDir rooted at docsDir.
+		hasMarker, err := markdownFileHasExampleMarker(path)
+		if err != nil {
+			return err
+		}
+		if hasMarker {
+			return fs.SkipAll
+		}
+
+		return nil
+	})
+	if walkErr != nil && !errors.Is(walkErr, fs.SkipAll) {
+		return false, walkErr
+	}
+
+	return errors.Is(walkErr, fs.SkipAll), nil
+}
+
+func markdownFileHasExampleMarker(path string) (bool, error) {
+	if !strings.EqualFold(filepath.Ext(path), ".md") {
+		return false, nil
+	}
+
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	//nolint:gosec // path comes from fixed root/docs traversal or root README.
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		return false, err
+	}
+
+	return strings.Contains(string(raw), "<!-- EXAMPLE:"), nil
 }

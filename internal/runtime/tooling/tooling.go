@@ -38,6 +38,7 @@ const (
 	toolSubcmd       = "tool"
 	getSubcmd        = "get"
 	toolFlag         = "-tool"
+	goWorkOff        = "GOWORK=off"
 	defaultToolsFile = "tools.mod"
 	defaultGoVersion = "1.26.7"
 	toolsModule      = "tools"
@@ -120,7 +121,7 @@ func installToolWithModFile(
 	stderr io.Writer,
 ) error {
 	args := []string{getSubcmd, "-modfile=" + modFile, toolFlag, spec.InstallTarget()}
-	opts := execx.RunOptions{Dir: cwd, Stdout: stdout, Stderr: stderr}
+	opts := execx.RunOptions{Dir: cwd, Env: []string{goWorkOff}, Stdout: stdout, Stderr: stderr}
 	if err := runner.Run(ctx, goCmd, args, opts); err != nil {
 		return fmt.Errorf("declare tool %s in %s: %w", spec.Name, modFile, err)
 	}
@@ -136,7 +137,7 @@ func ToolAvailable(ctx context.Context, runner execx.Runner, cwd string, name st
 	}
 
 	args := []string{toolSubcmd, "-modfile=" + modFile, "-n", name}
-	err := runner.Run(ctx, goCmd, args, execx.RunOptions{Dir: cwd})
+	err := runner.Run(ctx, goCmd, args, execx.RunOptions{Dir: cwd, Env: []string{goWorkOff}})
 	return err == nil
 }
 

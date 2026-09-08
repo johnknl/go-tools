@@ -45,6 +45,11 @@ var ToolSpecs = []ToolSpec{
 	{Name: "gorelease", Package: "golang.org/x/exp/cmd/gorelease", Version: "v0.0.0-20260611194520-c48552f49976"},
 	{Name: "benchstat", Package: "golang.org/x/perf/cmd/benchstat", Version: "v0.0.0-20260709024250-82a0b07e230d"},
 	{Name: "govulncheck", Package: "golang.org/x/vuln/cmd/govulncheck", Version: "v1.5.0"},
+	{
+		Name:    "fieldalignment",
+		Package: "golang.org/x/tools/go/analysis/passes/fieldalignment/cmd/fieldalignment",
+		Version: "v0.44.0",
+	},
 }
 
 // FindToolSpec locates a tool by binary name.

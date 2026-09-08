@@ -42,7 +42,10 @@ type options struct {
 	NoInput   bool
 }
 
-const subcommandRun = "run"
+const (
+	subcommandRun = "run"
+	allPackages   = "./..."
+)
 
 // NewCommand builds the lint root command.
 func NewCommand(app *appctx.Context) *cobra.Command {
@@ -97,7 +100,10 @@ func NewCommand(app *appctx.Context) *cobra.Command {
 			if err := runHeaders(cmd.Context(), app, opts.License, false); err != nil {
 				return err
 			}
-			fmtArgs := []string{"fmt", "./..."}
+			if err := app.RunTool(cmd.Context(), "fieldalignment", []string{"-fix", allPackages}); err != nil {
+				return err
+			}
+			fmtArgs := []string{"fmt", allPackages}
 			fmtOpts := execx.RunOptions{
 				Dir:    app.CWD,
 				Env:    []string{"GOFLAGS=-tags=" + opts.BuildTags},
@@ -115,7 +121,7 @@ func NewCommand(app *appctx.Context) *cobra.Command {
 		Use:   "vuln",
 		Short: "Run govulncheck",
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			return app.RunTool(cmd.Context(), "govulncheck", []string{"./..."})
+			return app.RunTool(cmd.Context(), "govulncheck", []string{allPackages})
 		},
 	}
 
